@@ -2,10 +2,11 @@ from isolation import Board
 from sample_players import RandomPlayer
 from sample_players import GreedyPlayer
 from game_agent import MinimaxPlayer
+from game_agent import AlphaBetaPlayer
 import timeit
 
 # create an isolation board (by default 7x7)
-player1 = MinimaxPlayer()
+player1 = AlphaBetaPlayer()
 player2 = GreedyPlayer()
 game = Board(player1, player2)
 print("Player1: ", player1)

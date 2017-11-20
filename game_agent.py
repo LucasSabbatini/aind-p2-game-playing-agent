@@ -41,7 +41,9 @@ def custom_score(game, player):
     if game.is_winner(player):
         return float("inf")
 
-    return float(len(game.get_legal_moves(player)))
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - opp_moves)
 
 
 def custom_score_2(game, player):
@@ -327,10 +329,21 @@ class AlphaBetaPlayer(IsolationPlayer):
             Board coordinates corresponding to a legal move; may return
             (-1, -1) if there are no available legal moves.
         """
+
         self.time_left = time_left
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        best_move = (-1, -1)
+
+        depth = 1
+        while self.time_left() > self.TIMER_THRESHOLD:
+            try:
+                best_move = self.alphabeta(game, depth)
+                depth += 1
+
+            except SearchTimeout:
+                break
+
+        return best_move
 
     def alphabeta(self, game, depth, alpha=float("-inf"), beta=float("inf")):
         """Implement depth-limited minimax search with alpha-beta pruning as
@@ -380,5 +393,87 @@ class AlphaBetaPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        possible_actions = game.get_legal_moves()
+        n_moves = len(possible_actions)
+        values_for_actions = np.zeros(n_moves)
+        for i in range(n_moves):
+            values_for_actions[i] = self.min_alpha_beta(game.forecast_move(possible_actions[i]), depth-1, alpha, beta)
+            alpha = max(values_for_actions[i], alpha)
+        try: 
+            return possible_actions[np.argmax(values_for_actions)]
+        except: 
+            pass
+
+    def min_alpha_beta(self, game, depth, alpha, beta):
+        """Min player in the alpha beta search
+
+        Parameter
+        ---------
+        game :
+        depth :
+        alpha : 
+            Since this is a min level, alpha represents the minimum value that can be found
+            in this branch, because it is the lower bound of the parent of this node (it 
+            will not choose a node with a value lower than alpha)
+        beta :
+
+        Returns
+        -------
+        v : int
+            minimum evaluation found in its children
+        """
+
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout
+
+        if depth == 0:
+            return self.score(game, self)
+
+        v = float("inf")
+        for action in game.get_legal_moves():
+            v = min(v, self.max_alpha_beta(game.forecast_move(action), depth-1, alpha, beta))
+            if v <= alpha: 
+                return v
+            beta = min(beta, v)
+        return v
+
+    def max_alpha_beta(self, game, depth, alpha, beta):
+        """Max player in the alpha beta search
+
+        Parameter
+        ---------
+        game : isolation.Board
+        depth : int
+        alpha : int
+        beta : int
+            Since this is a max level, beta represents the maximum value that can be found
+            in this branch, because it is the upper bound of the parent of this node (it
+            will not choose a node with a value higher than beta).
+
+        Returns
+        -------
+        v : int
+            maximum evaluation found in its children
+        """
+
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+
+        if depth == 0:
+            return self.score(game, self)
+
+        v = float("-inf")
+        for action in game.get_legal_moves():
+            v = max(v, self.min_alpha_beta(game.forecast_move(action), depth-1, alpha, beta)) 
+            if v >= beta:
+                return v
+            alpha = max(alpha, v)
+        return v
+
+
+
+
+
+
+
+
