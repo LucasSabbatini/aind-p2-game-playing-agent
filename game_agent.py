@@ -3,7 +3,7 @@ test your agent's strength against a set of known agents using tournament.py
 and include the results in your report.
 """
 import random
-
+import numpy as np 
 
 class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
@@ -35,7 +35,13 @@ def custom_score(game, player):
         The heuristic value of the current game state to the specified player.
     """
     # TODO: finish this function!
-    raise NotImplementedError
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    return float(len(game.get_legal_moves(player)))
 
 
 def custom_score_2(game, player):
@@ -212,8 +218,77 @@ class MinimaxPlayer(IsolationPlayer):
         if self.time_left() < self.TIMER_THRESHOLD:
             raise SearchTimeout()
 
-        # TODO: finish this function!
-        raise NotImplementedError
+        possible_actions = game.get_legal_moves()
+        values_for_actions = np.zeros(len(possible_actions))
+        for i in range(len(possible_actions)):
+            values_for_actions[i] = self.min_value(game.forecast_move(possible_actions[i]), depth-1)
+        try: 
+            return possible_actions[np.argmax(values_for_actions)]
+        except:
+
+            print(type(possible_actions))
+            print(possible_actions)  
+            pass
+
+    def max_value(self, game, depth):
+        """Max player in the minimax method. Look for the following move
+        that will maximize the expected evaluation
+
+        Parameters
+        ----------
+        game : Board object
+            Board objest representing a state of the game. It is a forecast state
+        following the last min action in the search tree
+
+        depth : int
+            remaining steps to reach maximum depth specified
+
+        Returns
+        -------
+        val : int
+            Utility value for current state
+
+        """
+        # timer check
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        # checking if limit depth or terminal test
+        if depth == 0:
+            return self.score(game, self)
+        v = float("-inf")
+        for action in game.get_legal_moves():
+            v = max(v, self.min_value(game.forecast_move(action), depth-1))
+        return v
+
+    def min_value(self, game, depth):
+        """Min player in the minimax method. Look for the following move that will
+        minimize the expected evaluation
+
+        Parameters
+        ----------
+        game : Board object
+            Board objest representing a state of the game. It is a forecast state
+        following the last min action in the search tree
+
+        depth : int
+            remaining steps to reach maximum depth specified
+
+        Returns
+        -------
+        val : int
+            Mimimum expected value associated with possible actions
+    
+        """
+        # timer chack
+        if self.time_left() < self.TIMER_THRESHOLD:
+            raise SearchTimeout()
+        # checking if limit depth or terminal test
+        if depth == 0:
+            return self.score(game, self)
+        v = float("inf")
+        for action in game.get_legal_moves():
+            v = min(v, self.max_value(game.forecast_move(action), depth-1))
+        return v
 
 
 class AlphaBetaPlayer(IsolationPlayer):
