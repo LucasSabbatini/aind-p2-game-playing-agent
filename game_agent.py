@@ -52,10 +52,13 @@ def actionMobility(game, player, max_actions=8):
     """
     if game.is_loser(player):
         return float("-inf")
+
     if game.is_winner(player):
         return float("inf")
 
-    return (len(game.get_legal_moves(player))*100.0/float(max_actions))
+    own_moves = len(game.get_legal_moves(player))
+    #opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves)
 
 def my_moves_op(game, player):
     """
@@ -63,7 +66,7 @@ def my_moves_op(game, player):
     ----------
     game : isolation_RL.Baord
     player : player object
-
+    
     Returns
     -------
     #my_moves-#op_moves
@@ -71,10 +74,13 @@ def my_moves_op(game, player):
 
     if game.is_loser(player):
         return float("-inf")
+
     if game.is_winner(player):
         return float("inf")
 
-    return float(len(game.get_legal_moves(player))-len(game.get_legal_moves(game.get_opponent(player))))
+    own_moves = len(game.get_legal_moves(player))
+    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
+    return float(own_moves - opp_moves)
 
 def my_moves_2_op(game, player):
     """
@@ -129,37 +135,6 @@ def actionFocus(game, player, max_actions=8):
 
     return 100.0-actionMobility(game, player)
 
-def improved_score(game, player):
-    """The "Improved" evaluation function discussed in lecture that outputs a
-    score equal to the difference in the number of moves available to the
-    two players.
-
-    Parameters
-    ----------
-    game : `isolation.Board`
-        An instance of `isolation.Board` encoding the current state of the
-        game (e.g., player locations and blocked cells).
-
-    player : hashable
-        One of the objects registered by the game object as a valid player.
-        (i.e., `player` should be either game.__player_1__ or
-        game.__player_2__).
-
-    Returns
-    ----------
-    float
-        The heuristic value of the current game state
-    """
-    if game.is_loser(player):
-        return float("-inf")
-
-    if game.is_winner(player):
-        return float("inf")
-
-    own_moves = len(game.get_legal_moves(player))
-    opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(own_moves - opp_moves)
-
 
 def custom_score(game, player):
     """
@@ -174,9 +149,7 @@ def custom_score(game, player):
 
     Returns
     -------
-    valuation : tuple (value, game_features)
-        value : The heuristic value of the current game state to the specified player.
-        state_features : numpy array with features evluated with every heuristic function
+    value : float
 
     Notes:
     - If weights are all set to 1.0 or 0.0, than this code is inefficient. It is 
@@ -185,7 +158,7 @@ def custom_score(game, player):
 
     try:
         index_list = []
-        weights = [0.0, 0.0, 1.0, 1.0, 0.0]
+        weights = [1.0, 0.25, 0.25, 0.0, 0.5]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -225,7 +198,7 @@ def custom_score_2(game, player):
     
     try:
         index_list = []
-        weights = [0.0, 0.0, 0.0, 0.0, 1.0]
+        weights = [1.0, 0.0, 0.25, 0.0, 0.75]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -241,11 +214,7 @@ def custom_score_2(game, player):
 
 
 def custom_score_3(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
-
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
+    """
 
     Parameters
     ----------
@@ -267,7 +236,7 @@ def custom_score_3(game, player):
     
     try:
         index_list = []
-        weights = [0.0, 0.0, 0.0, 1.0, 0.0]
+        weights = [0.0, 1.0, 0.0, 0.0, 0.0] # CURRENTLY ONLY USING MY_MOVES_OP
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -304,7 +273,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=10.):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=15.):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
@@ -606,7 +575,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         """
 
         if self.time_left() < self.TIMER_THRESHOLD:
-            raise SearchTimeout
+            raise SearchTimeout()
 
         if depth == 0:
             return self.score(game, self)
@@ -651,11 +620,4 @@ class AlphaBetaPlayer(IsolationPlayer):
                 return v
             alpha = max(alpha, v)
         return v
-
-
-
-
-
-
-
 
