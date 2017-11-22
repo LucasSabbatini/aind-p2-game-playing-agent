@@ -10,14 +10,129 @@ class SearchTimeout(Exception):
     pass
 
 
-def custom_score(game, player):
-    """Calculate the heuristic value of a game state from the point of view
-    of the given player.
+def evaluate(game, player, index_list, ax_actions=8):
+    """
+    Returns the cross product of weights and evaluation values
 
-    This should be the best heuristic function for your project submission.
+    This function now only evaluate functions with its index in index_list
 
-    Note: this function should be called from within a Player instance as
-    `self.score()` -- you should not need to call this function directly.
+    Parameters
+    ----------
+    game : isolation.Board
+    player : game-playing agent
+
+    Returns
+    -------
+    list with values returned from heuristic functions
+    """
+    try:
+        eval_functions = [actionMobility, 
+                            my_moves_op,
+                            my_moves_2_op,
+                            distance_from_center,
+                            actionFocus]
+        vec = []
+        for idx in index_list:
+            vec.append(eval_functions[idx](game, player))
+    except:
+        print("EvaluateFunctionEror")
+    return vec
+
+def actionMobility(game, player, max_actions=8):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Board
+    player : player object
+    max_acitons : int
+
+    Reutrns
+    -------
+    number of possible moves/max_actions
+    """
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+    return (len(game.get_legal_moves(player))*100.0/float(max_actions))
+
+def my_moves_op(game, player):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
+
+    Returns
+    -------
+    #my_moves-#op_moves
+    """
+
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+    return float(len(game.get_legal_moves(player))-len(game.get_legal_moves(game.get_opponent(player))))
+
+def my_moves_2_op(game, player):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
+    
+    Returns
+    -------
+    #my_moves-2*#op_moves
+    """
+
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+    return float(len(game.get_legal_moves(player))-2*len(game.get_legal_moves(game.get_opponent(player))))
+
+def distance_from_center(game, player):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
+    Returns 
+    -------
+    distance from center / max_dist
+    """
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+
+    max_dist = np.sqrt(2*((game.height//2)**2))
+    center = game.height//2
+    current_position = game.get_player_location(player)
+    distance = np.sqrt((abs(current_position[0]-center)**2)+(abs(current_position[1]-center))**2)
+    return distance * 100.0/max_dist
+
+def actionFocus(game, player, max_actions=8):
+
+    """
+
+    """
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+    return 100.0-actionMobility(game, player)
+
+def improved_score(game, player):
+    """The "Improved" evaluation function discussed in lecture that outputs a
+    score equal to the difference in the number of moves available to the
+    two players.
 
     Parameters
     ----------
@@ -25,16 +140,16 @@ def custom_score(game, player):
         An instance of `isolation.Board` encoding the current state of the
         game (e.g., player locations and blocked cells).
 
-    player : object
-        A player instance in the current game (i.e., an object corresponding to
-        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+    player : hashable
+        One of the objects registered by the game object as a valid player.
+        (i.e., `player` should be either game.__player_1__ or
+        game.__player_2__).
 
     Returns
-    -------
+    ----------
     float
-        The heuristic value of the current game state to the specified player.
+        The heuristic value of the current game state
     """
-    # TODO: finish this function!
     if game.is_loser(player):
         return float("-inf")
 
@@ -45,6 +160,45 @@ def custom_score(game, player):
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(own_moves - opp_moves)
 
+
+def custom_score(game, player):
+    """
+    Evaluate current state on player's view, using the evaluate function to obtain 
+    state features and a neural network forward pass to get the associated value
+
+    Parameters
+    ----------
+    game : isolation_RL.Board
+    player : player that the state should be evaluated for
+    model : isolation_nn.Network
+
+    Returns
+    -------
+    valuation : tuple (value, game_features)
+        value : The heuristic value of the current game state to the specified player.
+        state_features : numpy array with features evluated with every heuristic function
+
+    Notes:
+    - If weights are all set to 1.0 or 0.0, than this code is inefficient. It is 
+    only worth if positive weighst are different than 1.0
+    """
+
+    try:
+        index_list = []
+        weights = [0.0, 0.0, 1.0, 1.0, 0.0]
+        for i in range(len(weights)):
+            if weights[i] != 0.0:
+                index_list.append(i)
+        # at the end, weights and index_list
+
+        eval_vec = evaluate(game, player, index_list)
+        value = 0
+        for i in range(len(index_list)):
+            value += weights[index_list[i]]*eval_vec[i]
+
+    except:
+        print("Custom_scoreFuncitonError")
+    return value
 
 def custom_score_2(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -68,8 +222,22 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    
+    try:
+        index_list = []
+        weights = [0.0, 0.0, 0.0, 0.0, 1.0]
+        for i in range(len(weights)):
+            if weights[i] != 0.0:
+                index_list.append(i)
+        # at the end, weights and index_list
+
+        eval_vec = evaluate(game, player, index_list)
+        value = 0
+        for i in range(len(index_list)):
+            value += weights[index_list[i]]*eval_vec[i]
+    except:
+        print("Custom_scoreFuncitonError")
+    return value
 
 
 def custom_score_3(game, player):
@@ -93,9 +261,25 @@ def custom_score_3(game, player):
     -------
     float
         The heuristic value of the current game state to the specified player.
+
+    
     """
-    # TODO: finish this function!
-    raise NotImplementedError
+    
+    try:
+        index_list = []
+        weights = [0.0, 0.0, 0.0, 1.0, 0.0]
+        for i in range(len(weights)):
+            if weights[i] != 0.0:
+                index_list.append(i)
+        # at the end, weights and index_list
+
+        eval_vec = evaluate(game, player, index_list)
+        value = 0
+        for i in range(len(index_list)):
+            value += weights[index_list[i]]*eval_vec[i]
+    except:
+        print("Custom_scoreFuncitonError")
+    return value
 
 
 class IsolationPlayer:
@@ -228,9 +412,7 @@ class MinimaxPlayer(IsolationPlayer):
             return possible_actions[np.argmax(values_for_actions)]
         except:
 
-            print(type(possible_actions))
-            print(possible_actions)  
-            pass
+            return (-1, -1)
 
     def max_value(self, game, depth):
         """Max player in the minimax method. Look for the following move
@@ -401,8 +583,8 @@ class AlphaBetaPlayer(IsolationPlayer):
             alpha = max(values_for_actions[i], alpha)
         try: 
             return possible_actions[np.argmax(values_for_actions)]
-        except: 
-            pass
+        except:
+            return (-1, -1)
 
     def min_alpha_beta(self, game, depth, alpha, beta):
         """Min player in the alpha beta search
