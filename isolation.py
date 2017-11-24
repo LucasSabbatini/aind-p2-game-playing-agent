@@ -188,8 +188,8 @@ class Board(object):
         """
         if player is None:
             player = self.active_player
-        print("using the isolation from ain-p2-folder")
-        return self.__get_moves(self.get_player_location(player))
+
+        return self.get_moves(self.get_player_location(player))
 
     def apply_move(self, move):
         """Move the active player to a specified location.
@@ -248,7 +248,7 @@ class Board(object):
 
         return 0.
 
-    def __get_moves(self, loc):
+    def get_moves(self, loc):
         """Generate the list of possible moves for an L-shaped motion (like a
         knight in chess).
         """

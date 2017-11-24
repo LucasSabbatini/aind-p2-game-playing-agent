@@ -9,8 +9,12 @@ class SearchTimeout(Exception):
     """Subclass base exception for code clarity. """
     pass
 
+# -------------------------------------------------------------------------------------------------
+# HEURISTICS
 
-def evaluate(game, player, index_list):
+
+
+def evaluate(game, player, index_list, ax_actions=8):
     """
     Returns the cross product of weights and evaluation values
 
@@ -20,8 +24,6 @@ def evaluate(game, player, index_list):
     ----------
     game : isolation.Board
     player : game-playing agent
-    index_list : list
-        indexes for functions to be evaluated
 
     Returns
     -------
@@ -36,13 +38,11 @@ def evaluate(game, player, index_list):
         vec = []
         for idx in index_list:
             vec.append(eval_functions[idx](game, player))
-            if player.time_left() < player.TIMER_THRESHOLD:
-                raise SearchTimeout()
     except:
         print("EvaluateFunctionEror")
     return vec
 
-def actionMobility(game, player):
+def actionMobility(game, player, max_actions=8):
     """
     Parameters
     ----------
@@ -125,7 +125,51 @@ def distance_from_center(game, player):
     center = game.height//2
     current_position = game.get_player_location(player)
     distance = np.sqrt((abs(current_position[0]-center)**2)+(abs(current_position[1]-center))**2)
-    return distance * 100.0/max_dist
+    return distance
+
+def reversed_distance_from_center(game, player):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
+    Returns 
+    -------
+    distance from center / max_dist
+    """
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+
+    max_dist = np.sqrt(2*((game.height//2)**2))
+    center = game.height//2
+    current_position = game.get_player_location(player)
+    distance = np.sqrt(((current_position[0]-center)**2)+(current_position[1]-center)**2)
+    return float(5-(distance))
+
+def squared_distance_from_center(game, player):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
+    Returns 
+    -------
+    distance from center / max_dist
+    """
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+
+    max_dist = np.sqrt(2*((game.height//2)**2))
+    center = game.height//2
+    current_position = game.get_player_location(player)
+    distance = current_position[0]-center**2+(current_position[1]-center)**2
+    return float(distance)
 
 def actionFocus(game, player, max_actions=8):
 
@@ -138,6 +182,10 @@ def actionFocus(game, player, max_actions=8):
         return float("inf")
 
     return 100.0-actionMobility(game, player)
+
+
+# -------------------------------------------------------------------------------------------------
+# CUSTOM SCORE FUNCTIONS
 
 
 def custom_score(game, player):
@@ -255,6 +303,10 @@ def custom_score_3(game, player):
     return value
 
 
+# --------------------------------------------------------------------------------------------------
+# PLAYERS
+
+
 class IsolationPlayer:
     """Base class for minimax and alphabeta agents -- this class is never
     constructed or tested directly.
@@ -277,7 +329,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=10.):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=15.0):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
@@ -564,9 +616,9 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         Parameter
         ---------
-        game : isolation.Board
-        depth : int
-        alpha : int
+        game :
+        depth :
+        alpha : 
             Since this is a min level, alpha represents the minimum value that can be found
             in this branch, because it is the lower bound of the parent of this node (it 
             will not choose a node with a value lower than alpha)
