@@ -10,7 +10,7 @@ class SearchTimeout(Exception):
     pass
 
 
-def evaluate(game, player, index_list, ax_actions=8):
+def evaluate(game, player, index_list):
     """
     Returns the cross product of weights and evaluation values
 
@@ -20,6 +20,8 @@ def evaluate(game, player, index_list, ax_actions=8):
     ----------
     game : isolation.Board
     player : game-playing agent
+    index_list : list
+        indexes for functions to be evaluated
 
     Returns
     -------
@@ -34,11 +36,13 @@ def evaluate(game, player, index_list, ax_actions=8):
         vec = []
         for idx in index_list:
             vec.append(eval_functions[idx](game, player))
+            if player.time_left() < player.TIMER_THRESHOLD:
+                raise SearchTimeout()
     except:
         print("EvaluateFunctionEror")
     return vec
 
-def actionMobility(game, player, max_actions=8):
+def actionMobility(game, player):
     """
     Parameters
     ----------
@@ -273,7 +277,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=15.):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=10.):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
@@ -560,9 +564,9 @@ class AlphaBetaPlayer(IsolationPlayer):
 
         Parameter
         ---------
-        game :
-        depth :
-        alpha : 
+        game : isolation.Board
+        depth : int
+        alpha : int
             Since this is a min level, alpha represents the minimum value that can be found
             in this branch, because it is the lower bound of the parent of this node (it 
             will not choose a node with a value lower than alpha)

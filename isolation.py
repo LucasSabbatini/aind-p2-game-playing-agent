@@ -188,6 +188,7 @@ class Board(object):
         """
         if player is None:
             player = self.active_player
+        print("using the isolation from ain-p2-folder")
         return self.__get_moves(self.get_player_location(player))
 
     def apply_move(self, move):
@@ -260,6 +261,7 @@ class Board(object):
         valid_moves = [(r + dr, c + dc) for dr, dc in directions
                        if self.move_is_legal((r + dr, c + dc))]
         random.shuffle(valid_moves)
+        # print("successfully using __get_moves()")
         return valid_moves
 
     def print_board(self):

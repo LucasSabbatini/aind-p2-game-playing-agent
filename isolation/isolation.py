@@ -188,6 +188,7 @@ class Board(object):
         """
         if player is None:
             player = self.active_player
+        print("using get_legal_moves() from inside isolation folder")
         return self.__get_moves(self.get_player_location(player))
 
     def apply_move(self, move):
