@@ -17,6 +17,7 @@ print("Player2: ", player2)
 # the board at row 0, column 5; display the resulting board state.  Note
 # that the .apply_move() method changes the calling object in-place.
 game.apply_move((2, 3))
+print(game.to_string())
 game.apply_move((1, 5))
 print(game.to_string())
 # game.__get_moves((2,5))

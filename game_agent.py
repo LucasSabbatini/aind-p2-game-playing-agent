@@ -10,39 +10,10 @@ class SearchTimeout(Exception):
     pass
 
 # -------------------------------------------------------------------------------------------------
-# HEURISTICS
+# HEURISTICS: 8 FUNCTIONS
 
 
-
-def evaluate(game, player, index_list, ax_actions=8):
-    """
-    Returns the cross product of weights and evaluation values
-
-    This function now only evaluate functions with its index in index_list
-
-    Parameters
-    ----------
-    game : isolation.Board
-    player : game-playing agent
-
-    Returns
-    -------
-    list with values returned from heuristic functions
-    """
-    try:
-        eval_functions = [actionMobility, 
-                            my_moves_op,
-                            my_moves_2_op,
-                            distance_from_center,
-                            actionFocus]
-        vec = []
-        for idx in index_list:
-            vec.append(eval_functions[idx](game, player))
-    except:
-        print("EvaluateFunctionEror")
-    return vec
-
-def actionMobility(game, player, max_actions=8):
+def actionMobility(game, player):
     """
     Parameters
     ----------
@@ -52,7 +23,9 @@ def actionMobility(game, player, max_actions=8):
 
     Reutrns
     -------
-    number of possible moves/max_actions
+    float(own_moves) : number of self moves in state
+
+    Code source: Udacity sample_player.py project helper file
     """
     if game.is_loser(player):
         return float("-inf")
@@ -60,9 +33,8 @@ def actionMobility(game, player, max_actions=8):
     if game.is_winner(player):
         return float("inf")
 
-    own_moves = len(game.get_legal_moves(player))
-    #opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
-    return float(own_moves)
+    self_moves = len(game.get_legal_moves(player))
+    return float(self_moves)
 
 def my_moves_op(game, player):
     """
@@ -73,7 +45,9 @@ def my_moves_op(game, player):
     
     Returns
     -------
-    #my_moves-#op_moves
+    flaot(my_moves-op_moves) :
+
+    Code source: Udacity sample_player.py project halper file
     """
 
     if game.is_loser(player):
@@ -95,7 +69,9 @@ def my_moves_2_op(game, player):
     
     Returns
     -------
-    #my_moves-2*#op_moves
+    flaot(my_moves-2*opp_moves) : weighted difference. Encourage chasing after opponent.
+
+    Code source: Udacity AIND Lesson 8 - Advanced Game Playing
     """
 
     if game.is_loser(player):
@@ -111,6 +87,7 @@ def distance_from_center(game, player):
     ----------
     game : isolation_RL.Baord
     player : player object
+
     Returns 
     -------
     distance from center / max_dist
@@ -133,9 +110,11 @@ def reversed_distance_from_center(game, player):
     ----------
     game : isolation_RL.Baord
     player : player object
+
     Returns 
     -------
     distance from center / max_dist
+
     """
     if game.is_loser(player):
         return float("-inf")
@@ -147,7 +126,7 @@ def reversed_distance_from_center(game, player):
     center = game.height//2
     current_position = game.get_player_location(player)
     distance = np.sqrt(((current_position[0]-center)**2)+(current_position[1]-center)**2)
-    return float(5-(distance))
+    return 5.0-distance
 
 def squared_distance_from_center(game, player):
     """
@@ -155,6 +134,7 @@ def squared_distance_from_center(game, player):
     ----------
     game : isolation_RL.Baord
     player : player object
+
     Returns 
     -------
     distance from center / max_dist
@@ -171,21 +151,223 @@ def squared_distance_from_center(game, player):
     distance = current_position[0]-center**2+(current_position[1]-center)**2
     return float(distance)
 
-def actionFocus(game, player, max_actions=8):
-
+def actionFocus(game, player):
     """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
 
+    Returns 
+    -------
+    10.0 - actionMobility(game, player)
     """
     if game.is_loser(player):
         return float("-inf")
     if game.is_winner(player):
         return float("inf")
 
-    return 100.0-actionMobility(game, player)
+    return 10.0-actionMobility(game, player)
+
+def weighted_my_moves(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+    Modify the Open moves score heuristic provided to us by weighting each
+    open move by a weight that depends on the position the move leads to
+    on the game board.
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+    Returns
+    ----------
+    float
+        The heuristic value of the current game state to the specified player.
+
+    Code source: veeresht
+    """
+
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    h, w = game.height, game.width
+    score = 0
+    own_moves = game.get_legal_moves(player)
+    for move in own_moves:
+        if move in [(0, 0), (0, w-1), (h-1, 0), (h-1, w-1)]:
+            score += 2
+        elif move in [(0, 1), (0, w-2), (1, 0), (1, w-1), (h-2, 0), (h-2, w-1), (h-1, 1), (h-1, w-2)]:
+            score += 3
+        elif ((move[0] == 0 or move[0] == h-1) and move[1] >= 2 and move[1] <= w-3) or ((move[1] == 0 or move[1] == w-1) and move[0] >= 2 and move[0] <= h-3):
+            score += 4
+        elif move in [(1, 1), (1, w-2), (h-2, 1), (h-2, w-2)]:
+            score += 4
+        elif ((move[0] == 1 or move[0] == h-2) and move[1] >= 2 and move[1] <= w-3) or ((move[1] == 1 or move[1] == w-2) and move[0] >= 2 and move[0] <= h-3):
+            score += 6
+        else:
+            score += 8
+
+    return float(score)
+
+def weighted_diff_my_moves_opp_moves(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+    Calculate the difference in the weighted open moves scores between the
+    current player and its opponent and use that as the score of the
+    current game state.
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+    player : object
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+    Returns
+    ----------
+    float
+        The heuristic value of the current game state to the specified player.
+
+    Code source: veeresht
+    """
+
+    # TODO: finish this function!
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    h, w = game.height, game.width
+    own_score = 0
+    opp_score = 0
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    for move in own_moves:
+        if move in [(0, 0), (0, w-1), (h-1, 0), (h-1, w-1)]:
+            own_score += 2
+        elif move in [(0, 1), (0, w-2), (1, 0), (1, w-1), (h-2, 0), (h-2, w-1), (h-1, 1), (h-1, w-2)]:
+            own_score += 3
+        elif ((move[0] == 0 or move[0] == h-1) and move[1] >= 2 and move[1] <= w-3) or ((move[1] == 0 or move[1] == w-1) and move[0] >= 2 and move[0] <= h-3):
+            own_score += 4
+        elif move in [(1, 1), (1, w-2), (h-2, 1), (h-2, w-2)]:
+            own_score += 4
+        elif ((move[0] == 1 or move[0] == h-2) and move[1] >= 2 and move[1] <= w-3) or ((move[1] == 1 or move[1] == w-2) and move[0] >= 2 and move[0] <= h-3):
+            own_score += 6
+        else:
+            own_score += 8
+
+    for move in opp_moves:
+        if move in [(0, 0), (0, w-1), (h-1, 0), (h-1, w-1)]:
+            opp_score += 2
+        elif move in [(0, 1), (0, w-2), (1, 0), (1, w-1), (h-2, 0), (h-2, w-1), (h-1, 1), (h-1, w-2)]:
+            opp_score += 3
+        elif ((move[0] == 0 or move[0] == h-1) and move[1] >= 2 and move[1] <= w-3) or ((move[1] == 0 or move[1] == w-1) and move[0] >= 2 and move[0] <= h-3):
+            opp_score += 4
+        elif move in [(1, 1), (1, w-2), (h-2, 1), (h-2, w-2)]:
+            opp_score += 4
+        elif ((move[0] == 1 or move[0] == h-2) and move[1] >= 2 and move[1] <= w-3) or ((move[1] == 1 or move[1] == w-2) and move[0] >= 2 and move[0] <= h-3):
+            opp_score += 6
+        else:
+            opp_score += 8
+
+    #print(own_score, opp_score, own_score - opp_score)
+    return float(own_score - opp_score)
+
+def diff_my_moves_opp_moves_one_ply_lookahead(game, player):
+    """Calculate the heuristic value of a game state from the point of view
+    of the given player.
+    The difference in the number of available moves between the current
+    player and its opponent one ply ahead in the future is used as the
+    score of the current game state.
+    Parameters
+    ----------
+    game : `isolation.Board`
+        An instance of `isolation.Board` encoding the current state of the
+        game (e.g., player locations and blocked cells).
+    player : objects
+        A player instance in the current game (i.e., an object corresponding to
+        one of the player objects `game.__player_1__` or `game.__player_2__`.)
+    Returns
+    ----------
+    float
+        The heuristic value of the current game state to the specified player.
+
+    Code source: veeresht
+    """
+
+    # TODO: finish this function!
+    if game.is_loser(player):
+        return float("-inf")
+
+    if game.is_winner(player):
+        return float("inf")
+
+    h, w = game.height, game.width
+    own_score = 0
+    opp_score = 0
+    own_moves = game.get_legal_moves(player)
+    opp_moves = game.get_legal_moves(game.get_opponent(player))
+    for move in own_moves:
+        own_score += len(game.get_moves(move))
+
+    for move in opp_moves:
+        opp_score += len(game.get_moves(move))
+
+    #print(own_score, opp_score, own_score - opp_score)
+    return float(own_score - opp_score)
 
 
 # -------------------------------------------------------------------------------------------------
 # CUSTOM SCORE FUNCTIONS
+
+def evaluate(game, player, index_list):
+    """
+    Returns the cross product of weights and evaluation values
+
+    This function now only evaluate functions with its index in index_list
+
+    Parameters
+    ----------
+    game : isolation.Board
+    player : game-playing agent
+
+    Returns
+    -------
+    list with values returned from heuristic functions
+    """
+    try:
+        eval_functions = [actionMobility, 
+                            my_moves_op,
+                            my_moves_2_op,
+                            distance_from_center,
+                            actionFocus,
+                            reversed_distance_from_center,
+                            squared_distance_from_center,
+                            weighted_my_moves,
+                            weighted_diff_my_moves_opp_moves,
+                            diff_my_moves_opp_moves_one_ply_lookahead]
+        vec = []
+        for idx in index_list:
+
+            vec.append(eval_functions[idx](game, player))
+            if player.time_left() < player.TIMER_THRESHOLD:
+                return [0.0]*len(index_list)
+        # print("state: ", )
+        # print(game.to_string())
+        # print("values: ")
+        # print(vec)
+    except:
+        print("EvaluateFunctionEror")
+
+    return vec
 
 
 def custom_score(game, player):
@@ -206,16 +388,27 @@ def custom_score(game, player):
     Notes:
     - If weights are all set to 1.0 or 0.0, than this code is inefficient. It is 
     only worth if positive weighst are different than 1.0
+
+    Weight matrix represent the functions in the following order:
+        actionMobility
+        my_moves_op,
+        my_moves_2_op,
+        distance_from_center,
+        actionFocus,
+        reversed_distance_from_center,
+        squared_distance_from_center,
+        weighted_my_moves,
+        weighted_diff_my_moves_opp_moves,
+        diff_my_moves_opp_moves_one_ply_lookahead
     """
 
     try:
         index_list = []
-        weights = [1.0, 0.25, 0.25, 0.0, 0.5]
+        weights = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
         # at the end, weights and index_list
-
         eval_vec = evaluate(game, player, index_list)
         value = 0
         for i in range(len(index_list)):
@@ -246,11 +439,23 @@ def custom_score_2(game, player):
     -------
     float
         The heuristic value of the current game state to the specified player.
+
+    Weight matrix represent the functions in the following order:
+        actionMobility
+        my_moves_op,
+        my_moves_2_op,
+        distance_from_center,
+        actionFocus,
+        reversed_distance_from_center,
+        squared_distance_from_center,
+        weighted_my_moves,
+        weighted_diff_my_moves_opp_moves,
+        diff_my_moves_opp_moves_one_ply_lookahead
     """
     
     try:
         index_list = []
-        weights = [1.0, 0.0, 0.25, 0.0, 0.75]
+        weights = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -283,12 +488,23 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
 
-    
+    Weight matrix represent the functions in the following order:
+        actionMobility
+        my_moves_op,
+        my_moves_2_op,
+        distance_from_center,
+        actionFocus,
+        reversed_distance_from_center,
+        squared_distance_from_center,
+        weighted_my_moves,
+        weighted_diff_my_moves_opp_moves,
+        diff_my_moves_opp_moves_one_ply_lookahead
+
     """
     
     try:
         index_list = []
-        weights = [0.0, 1.0, 0.0, 0.0, 0.0] # CURRENTLY ONLY USING MY_MOVES_OP
+        weights = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -675,5 +891,6 @@ class AlphaBetaPlayer(IsolationPlayer):
             if v >= beta:
                 return v
             alpha = max(alpha, v)
+
         return v
 
