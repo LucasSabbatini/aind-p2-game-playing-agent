@@ -36,7 +36,30 @@ def actionMobility(game, player):
     self_moves = len(game.get_legal_moves(player))
     return float(self_moves)
 
-def my_moves_op(game, player):
+def actionFocus(game, player):
+    """
+    Parameters
+    ----------
+    game : isolation_RL.Baord
+    player : player object
+
+    Returns 
+    -------
+    10.0 - actionMobility(game, player)
+
+    Code source: 
+        A simple heuristic-based General Game Player. Kukreja, K.  
+        https://kartikkukreja.wordpress.com/2015/11/22/a-simple-heuristic-based-general-game-player/#more-748
+    """
+    if game.is_loser(player):
+        return float("-inf")
+    if game.is_winner(player):
+        return float("inf")
+
+    return 10.0-actionMobility(game, player)
+
+
+def my_moves_opp(game, player):
     """
     Parameters
     ----------
@@ -60,7 +83,7 @@ def my_moves_op(game, player):
     opp_moves = len(game.get_legal_moves(game.get_opponent(player)))
     return float(own_moves - opp_moves)
 
-def my_moves_2_op(game, player):
+def my_moves_2_opp(game, player):
     """
     Parameters
     ----------
@@ -151,23 +174,6 @@ def squared_distance_from_center(game, player):
     distance = current_position[0]-center**2+(current_position[1]-center)**2
     return float(distance)
 
-def actionFocus(game, player):
-    """
-    Parameters
-    ----------
-    game : isolation_RL.Baord
-    player : player object
-
-    Returns 
-    -------
-    10.0 - actionMobility(game, player)
-    """
-    if game.is_loser(player):
-        return float("-inf")
-    if game.is_winner(player):
-        return float("inf")
-
-    return 10.0-actionMobility(game, player)
 
 def weighted_my_moves(game, player):
     """Calculate the heuristic value of a game state from the point of view
@@ -278,7 +284,6 @@ def weighted_diff_my_moves_opp_moves(game, player):
         else:
             opp_score += 8
 
-    #print(own_score, opp_score, own_score - opp_score)
     return float(own_score - opp_score)
 
 def diff_my_moves_opp_moves_one_ply_lookahead(game, player):
@@ -300,10 +305,9 @@ def diff_my_moves_opp_moves_one_ply_lookahead(game, player):
     float
         The heuristic value of the current game state to the specified player.
 
-    Code source: veeresht
+    Code and documentation source: veeresht, https://github.com/veeresht/AINanodegree/blob/master/Project2-IsolationGameAI/game_agent.py
     """
 
-    # TODO: finish this function!
     if game.is_loser(player):
         return float("-inf")
 
@@ -321,7 +325,6 @@ def diff_my_moves_opp_moves_one_ply_lookahead(game, player):
     for move in opp_moves:
         opp_score += len(game.get_moves(move))
 
-    #print(own_score, opp_score, own_score - opp_score)
     return float(own_score - opp_score)
 
 
@@ -341,14 +344,15 @@ def evaluate(game, player, index_list):
 
     Returns
     -------
-    list with values returned from heuristic functions
+    vec : list 
+        Values returned from heuristic functions
     """
     try:
         eval_functions = [actionMobility, 
-                            my_moves_op,
-                            my_moves_2_op,
-                            distance_from_center,
                             actionFocus,
+                            my_moves_opp,
+                            my_moves_2_opp,
+                            distance_from_center,
                             reversed_distance_from_center,
                             squared_distance_from_center,
                             weighted_my_moves,
@@ -360,10 +364,6 @@ def evaluate(game, player, index_list):
             vec.append(eval_functions[idx](game, player))
             if player.time_left() < player.TIMER_THRESHOLD:
                 return [0.0]*len(index_list)
-        # print("state: ", )
-        # print(game.to_string())
-        # print("values: ")
-        # print(vec)
     except:
         print("EvaluateFunctionEror")
 
@@ -389,12 +389,12 @@ def custom_score(game, player):
     - If weights are all set to 1.0 or 0.0, than this code is inefficient. It is 
     only worth if positive weighst are different than 1.0
 
-    Weight matrix represent the functions in the following order:
-        actionMobility
-        my_moves_op,
-        my_moves_2_op,
-        distance_from_center,
+    Weight matrix points to functions in the following order:
+        actionMobility,
         actionFocus,
+        my_moves_opp,
+        my_moves_2_opp,
+        distance_from_center,
         reversed_distance_from_center,
         squared_distance_from_center,
         weighted_my_moves,
@@ -404,11 +404,11 @@ def custom_score(game, player):
 
     try:
         index_list = []
-        weights = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        weights =  [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
-        # at the end, weights and index_list
+
         eval_vec = evaluate(game, player, index_list)
         value = 0
         for i in range(len(index_list)):
@@ -440,12 +440,12 @@ def custom_score_2(game, player):
     float
         The heuristic value of the current game state to the specified player.
 
-    Weight matrix represent the functions in the following order:
-        actionMobility
-        my_moves_op,
-        my_moves_2_op,
-        distance_from_center,
+    Weight matrix points to functions in the following order:
+        actionMobility,
         actionFocus,
+        my_moves_opp,
+        my_moves_2_opp,
+        distance_from_center,
         reversed_distance_from_center,
         squared_distance_from_center,
         weighted_my_moves,
@@ -455,11 +455,10 @@ def custom_score_2(game, player):
     
     try:
         index_list = []
-        weights = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        weights =  [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
-        # at the end, weights and index_list
 
         eval_vec = evaluate(game, player, index_list)
         value = 0
@@ -488,27 +487,25 @@ def custom_score_3(game, player):
     float
         The heuristic value of the current game state to the specified player.
 
-    Weight matrix represent the functions in the following order:
-        actionMobility
-        my_moves_op,
-        my_moves_2_op,
-        distance_from_center,
+    Weight matrix points to functions in the following order:
+        actionMobility,
         actionFocus,
+        my_moves_opp,
+        my_moves_2_opp,
+        distance_from_center,
         reversed_distance_from_center,
         squared_distance_from_center,
         weighted_my_moves,
         weighted_diff_my_moves_opp_moves,
         diff_my_moves_opp_moves_one_ply_lookahead
-
     """
     
     try:
         index_list = []
-        weights = [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        weights = [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
-        # at the end, weights and index_list
 
         eval_vec = evaluate(game, player, index_list)
         value = 0
@@ -545,7 +542,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=15.0):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=10.0):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
@@ -652,7 +649,7 @@ class MinimaxPlayer(IsolationPlayer):
         try: 
             return possible_actions[np.argmax(values_for_actions)]
         except:
-
+            # handling case with no possible actions
             return (-1, -1)
 
     def max_value(self, game, depth):
@@ -855,6 +852,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         v = float("inf")
         for action in game.get_legal_moves():
             v = min(v, self.max_alpha_beta(game.forecast_move(action), depth-1, alpha, beta))
+            # prune if v is lower than alpha
             if v <= alpha: 
                 return v
             beta = min(beta, v)
@@ -888,6 +886,7 @@ class AlphaBetaPlayer(IsolationPlayer):
         v = float("-inf")
         for action in game.get_legal_moves():
             v = max(v, self.min_alpha_beta(game.forecast_move(action), depth-1, alpha, beta)) 
+            # prune if v is higher than beta
             if v >= beta:
                 return v
             alpha = max(alpha, v)
