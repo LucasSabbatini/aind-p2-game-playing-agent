@@ -289,7 +289,7 @@ def custom_score(game, player):
 
     try:
         index_list = []
-        weights = [0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.6]
+        weights = [0.4, 0.2, 0.0, 0.0, 0.0, 0.0, 0.0, 0.6]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -338,7 +338,7 @@ def custom_score_2(game, player):
     
     try:
         index_list = []
-        weights = [0.4, 0.2, 0.0, 0.2, 0.0, 0.0, 0.0, 0.6]
+        weights = [0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.6]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -382,7 +382,7 @@ def custom_score_3(game, player):
     
     try:
         index_list = []
-        weights = [0.2, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0, 0.6]
+        weights = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
         for i in range(len(weights)):
             if weights[i] != 0.0:
                 index_list.append(i)
@@ -422,7 +422,7 @@ class IsolationPlayer:
         positive value large enough to allow the function to return before the
         timer expires.
     """
-    def __init__(self, search_depth=3, score_fn=custom_score, timeout=12.0):
+    def __init__(self, search_depth=3, score_fn=custom_score, timeout=15.0):
         self.search_depth = search_depth
         self.score = score_fn
         self.time_left = None
